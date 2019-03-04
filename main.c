@@ -20,9 +20,6 @@ int main(int argc, char *argv[]) {
   SDL_bool running = SDL_TRUE;
   SDL_Renderer *renderer;
   SDL_Window *window;
-  struct GameState *state;
-  Uint32 nextTick = 0;
-  int frameLoops;
   
   if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
     return 3;
@@ -32,6 +29,10 @@ int main(int argc, char *argv[]) {
     return 3;
   }
 
+  struct GameState *state;
+  Uint32 nextTick = 0;
+  int frameLoops;
+  
   init(&state);
 
   while (running) {
