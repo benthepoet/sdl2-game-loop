@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 #include "SDL2/SDL.h"
 
 #define WIN_X 640
