@@ -13,24 +13,26 @@ const int SKIP_TICKS = 1000 / TICKS_PER_SECOND;
 struct Animation {
   int w;
   int h;
-  int currentFrame;
-  int numFrames;
-  int frameDuration;
+  int current;
+  int total;
+  int duration;
   int timer;
-  SDL_Surface *surface;
   SDL_Texture *texture;
 };
 
-struct GameState {
-  int offset;
-  int speed;
-  struct Animation *run;
+struct Sprite {
+  SDL_RendererFlip direction;
+  struct Animation animation;
 };
 
-void init(struct GameState **state, SDL_Renderer *renderer);
+struct GameState {
+  struct Sprite *sprites;
+};
+
+struct GameState* init(SDL_Renderer *renderer);
 void draw(SDL_Renderer *renderer, struct GameState *state);
+void drawSprite(SDL_Renderer *renderer, struct Sprite *sprite);
 void update(struct GameState *state);
-SDL_Rect* makeRect(int x, int y, int w, int h);
 
 int main(int argc, char *argv[]) {
   SDL_bool running = SDL_TRUE;
@@ -47,12 +49,11 @@ int main(int argc, char *argv[]) {
 
   SDL_SetWindowTitle(window, "Demo");
   
-  struct GameState *state;
   Uint32 nextTick = 0;
   int frameLoops;
   
-  init(&state, renderer);
-
+  struct GameState *state = init(renderer);
+  
   while (running) {
     SDL_Event event;
 
@@ -80,55 +81,57 @@ int main(int argc, char *argv[]) {
   return 0;
 }
 
-void init(struct GameState **state, SDL_Renderer *renderer) {
+struct GameState* init(SDL_Renderer *renderer) {
   struct GameState *initial = malloc(sizeof(struct GameState));
-  initial->offset = 0;
-  initial->speed = 4;
 
-  initial->run = malloc(sizeof(struct Animation));
-  initial->run->timer = 0;
-  initial->run->w = 24;
-  initial->run->currentFrame = 0;
-  initial->run->numFrames = 4;
-  initial->run->frameDuration = 10;
-
+  struct Animation animation = { 24, 24, 0, 4, 10, 0 };
   SDL_Surface *surface = SDL_LoadBMP("run.bmp");
-  initial->run->texture = SDL_CreateTextureFromSurface(renderer, surface);
+  animation.texture = SDL_CreateTextureFromSurface(renderer, surface);
   SDL_FreeSurface(surface);
+
+  initial->sprites = malloc(sizeof(struct Sprite));
+  initial->sprites->animation = animation;
   
-  *state = initial;
+  return initial;
 }
 
 void draw(SDL_Renderer *renderer, struct GameState *state) {
   SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
   SDL_RenderClear(renderer);
 
-  int x = state->run->currentFrame * state->run->w;
-  SDL_Rect *srcRect = makeRect(x, 0, state->run->w, state->run->w);
-  SDL_Rect *dstRect = makeRect(0, 0, srcRect->w * SCALE_FACTOR, srcRect->w * SCALE_FACTOR);
+  int n = sizeof(*state->sprites) / sizeof(struct Sprite);
+  struct Sprite *sprite = state->sprites;
   
-  SDL_RenderCopy(renderer, state->run->texture, srcRect, dstRect);
-
+  for (int i = 0; i < n; i++, sprite++) {
+    drawSprite(renderer, sprite);
+  }
+  
   SDL_RenderPresent(renderer);
 }
 
-void update(struct GameState *state) {
-  state->run->timer++;
+void drawSprite(SDL_Renderer *renderer, struct Sprite *sprite) {
+  int x = sprite->animation.w * sprite->animation.current;
+  
+  SDL_Rect src = { x, 0, 24, 24 };
+  SDL_Rect dst = { 0, 0, 24 * 3, 24 * 3 };
 
-  if (state->run->timer > state->run->frameDuration) {
-    state->run->timer = 0;
-    state->run->currentFrame++;
-    if (state->run->currentFrame == state->run->numFrames) {
-      state->run->currentFrame = 0;
-    }
-  }
+  SDL_RenderCopy(renderer, sprite->animation.texture, &src, &dst);
 }
 
-SDL_Rect* makeRect(int x, int y, int w, int h) {
-  SDL_Rect *rect = malloc(sizeof(SDL_Rect));
-  rect->x = x;
-  rect->y = y;
-  rect->w = w;
-  rect->h = h;
-  return rect;
+void update(struct GameState *state) {
+  int n = sizeof(*state->sprites) / sizeof(struct Sprite);
+  struct Sprite *sprite = state->sprites;
+
+  for (int i = 0; i < n; i++, sprite++) {
+    sprite->animation.timer++;
+
+    if (sprite->animation.timer > sprite->animation.duration) {
+      sprite->animation.timer = 0;
+      sprite->animation.current++;
+
+      if (sprite->animation.current == sprite->animation.total) {
+	sprite->animation.current = 0;
+      }
+    }
+  }
 }
