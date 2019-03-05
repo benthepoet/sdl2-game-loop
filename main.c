@@ -9,22 +9,27 @@
 
 const int SKIP_TICKS = 1000 / TICKS_PER_SECOND;
 
-struct GameState {
-  int offset;
-  int speed;
-};
-
 struct Animation {
   int w;
   int h;
   int currentFrame;
   int numFrames;
+  int frameDuration;
+  int timer;
   SDL_Surface *surface;
+  SDL_Texture *texture;
 };
 
-void init(struct GameState **state);
+struct GameState {
+  int offset;
+  int speed;
+  struct Animation *run;
+};
+
+void init(struct GameState **state, SDL_Renderer *renderer);
 void draw(SDL_Renderer *renderer, struct GameState *state);
 void update(struct GameState *state);
+SDL_Rect* makeRect(int x, int y, int w, int h);
 
 int main(int argc, char *argv[]) {
   SDL_bool running = SDL_TRUE;
@@ -39,16 +44,13 @@ int main(int argc, char *argv[]) {
     return 3;
   }
 
-  struct Animation runAnimation;
-  runAnimation.currentFrame = 0;
-  runAnimation.numFrames = 4;
-  runAnimation.surface = SDL_LoadBMP("run.bmp");
+  SDL_SetWindowTitle(window, "Demo");
   
   struct GameState *state;
   Uint32 nextTick = 0;
   int frameLoops;
   
-  init(&state);
+  init(&state, renderer);
 
   while (running) {
     SDL_Event event;
@@ -77,22 +79,55 @@ int main(int argc, char *argv[]) {
   return 0;
 }
 
-void init(struct GameState **state) {
+void init(struct GameState **state, SDL_Renderer *renderer) {
   struct GameState *initial = malloc(sizeof(struct GameState));
   initial->offset = 0;
   initial->speed = 4;
 
+  initial->run = malloc(sizeof(struct Animation));
+  initial->run->timer = 0;
+  initial->run->w = 24;
+  initial->run->currentFrame = 0;
+  initial->run->numFrames = 4;
+  initial->run->frameDuration = 10;
+
+  SDL_Surface *surface = SDL_LoadBMP("run.bmp");
+  initial->run->texture = SDL_CreateTextureFromSurface(renderer, surface);
+  SDL_FreeSurface(surface);
+  
   *state = initial;
 }
 
 void draw(SDL_Renderer *renderer, struct GameState *state) {
-  SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-  SDL_RenderClear(renderer);
   SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-  SDL_RenderDrawLine(renderer, state->offset, 200, 100 + state->offset, 200);
+  SDL_RenderClear(renderer);
+
+  int x = state->run->currentFrame * state->run->w;
+  SDL_Rect *srcRect = makeRect(x, 0, state->run->w, state->run->w);
+  SDL_Rect *dstRect = makeRect(0, 0, state->run->w * 3, state->run->w * 3);
+  
+  SDL_RenderCopy(renderer, state->run->texture, srcRect, dstRect);
+
   SDL_RenderPresent(renderer);
 }
 
 void update(struct GameState *state) {
-  state->offset += state->speed;
+  state->run->timer++;
+
+  if (state->run->timer > state->run->frameDuration) {
+    state->run->timer = 0;
+    state->run->currentFrame++;
+    if (state->run->currentFrame == state->run->numFrames) {
+      state->run->currentFrame = 0;
+    }
+  }
+}
+
+SDL_Rect* makeRect(int x, int y, int w, int h) {
+  SDL_Rect *rect = malloc(sizeof(SDL_Rect));
+  rect->x = x;
+  rect->y = y;
+  rect->w = w;
+  rect->h = h;
+  return rect;
 }
