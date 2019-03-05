@@ -14,6 +14,14 @@ struct GameState {
   int speed;
 };
 
+struct Animation {
+  int w;
+  int h;
+  int currentFrame;
+  int numFrames;
+  SDL_Surface *surface;
+};
+
 void init(struct GameState **state);
 void draw(SDL_Renderer *renderer, struct GameState *state);
 void update(struct GameState *state);
@@ -31,6 +39,11 @@ int main(int argc, char *argv[]) {
     return 3;
   }
 
+  struct Animation runAnimation;
+  runAnimation.currentFrame = 0;
+  runAnimation.numFrames = 4;
+  runAnimation.surface = SDL_LoadBMP("run.bmp");
+  
   struct GameState *state;
   Uint32 nextTick = 0;
   int frameLoops;
