@@ -6,6 +6,7 @@
 #define WIN_Y 480
 #define TICKS_PER_SECOND 60
 #define MAX_FRAMESKIP 10
+#define SCALE_FACTOR 3
 
 const int SKIP_TICKS = 1000 / TICKS_PER_SECOND;
 
@@ -104,7 +105,7 @@ void draw(SDL_Renderer *renderer, struct GameState *state) {
 
   int x = state->run->currentFrame * state->run->w;
   SDL_Rect *srcRect = makeRect(x, 0, state->run->w, state->run->w);
-  SDL_Rect *dstRect = makeRect(0, 0, state->run->w * 3, state->run->w * 3);
+  SDL_Rect *dstRect = makeRect(0, 0, srcRect->w * SCALE_FACTOR, srcRect->w * SCALE_FACTOR);
   
   SDL_RenderCopy(renderer, state->run->texture, srcRect, dstRect);
 
