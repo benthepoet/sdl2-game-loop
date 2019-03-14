@@ -20,6 +20,9 @@ struct Animation {
 };
 
 struct Sprite {
+  int x;
+  int y;
+  int speed;
   SDL_RendererFlip direction;
   struct Animation animation;
 };
@@ -72,17 +75,24 @@ int main(int argc, char *argv[]) {
 	  running = SDL_FALSE;
 	  break;
 
-        case SDL_KEYUP:
+        case SDL_KEYDOWN:
 	  if (event.key.keysym.sym == SDLK_LEFT) {
-	    state->sprites->direction = SDL_FLIP_HORIZONTAL;
+	    state->sprites->speed = -1;
 	  }
 	  if (event.key.keysym.sym == SDLK_RIGHT) {
-	    state->sprites->direction = SDL_FLIP_NONE;
+	    state->sprites->speed = 1;
 	  }
 	  break;
 
-        default:
-  	  break;
+	case SDL_KEYUP:
+	  if (event.key.keysym.sym == SDLK_LEFT) {
+	    state->sprites->speed = 0;
+	  }
+	  if (event.key.keysym.sym == SDLK_RIGHT) {
+	    state->sprites->speed = 0;
+	  }
+	  default:
+	    break;
       }
     }
   }
@@ -103,6 +113,9 @@ struct GameState* init(SDL_Renderer *renderer) {
   SDL_FreeSurface(surface);
 
   initial->sprites = malloc(sizeof(struct Sprite));
+  initial->sprites->x = 0;
+  initial->sprites->y = 0;
+  initial->sprites->speed = 0;
   initial->sprites->direction = SDL_FLIP_NONE;
   initial->sprites->animation = animation;
   
@@ -126,8 +139,13 @@ void draw(SDL_Renderer *renderer, struct GameState *state) {
 void drawSprite(SDL_Renderer *renderer, struct Sprite *sprite) {
   int x = sprite->animation.w * sprite->animation.current;
   
-  SDL_Rect src = { x, 0, 24, 24 };
-  SDL_Rect dst = { 0, 0, 24 * 3, 24 * 3 };
+  SDL_Rect src = { x, 0, sprite->animation.w, sprite->animation.h };
+  SDL_Rect dst = {
+    sprite->x * SCALE_FACTOR,
+    sprite->y * SCALE_FACTOR,
+    sprite->animation.w * SCALE_FACTOR,
+    sprite->animation.h * SCALE_FACTOR
+  };
   
   SDL_RenderCopyEx(renderer, sprite->animation.texture, &src, &dst, 0, NULL, sprite->direction);
 }
@@ -138,7 +156,15 @@ void update(struct GameState *state) {
 
   for (int i = 0; i < n; i++, sprite++) {
     sprite->animation.timer++;
+    sprite->x += sprite->speed;
 
+    if (sprite->speed < 0) {
+      sprite->direction = SDL_FLIP_HORIZONTAL;
+    }
+    if (sprite->speed > 0) {
+      sprite->direction = SDL_FLIP_NONE;
+    }
+    
     if (sprite->animation.timer > sprite->animation.duration) {
       sprite->animation.timer = 0;
       sprite->animation.current++;
