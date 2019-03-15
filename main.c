@@ -96,6 +96,7 @@ int main(int argc, char *argv[]) {
           if (event.key.keysym.sym == SDLK_RIGHT) {
             state->sprites->velocity_x = 0;
           }
+
         default:
           break;
       }
