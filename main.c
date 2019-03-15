@@ -39,9 +39,12 @@ struct GameTimer {
 };
 
 struct GameState* init(SDL_Renderer *renderer);
+
 void draw(SDL_Renderer *renderer, struct GameState *state);
 void draw_sprite(SDL_Renderer *renderer, struct Sprite *sprite);
+
 void update(struct GameState *state);
+void update_animation(struct Animation *animation);
 
 int main(int argc, char *argv[]) {
   SDL_bool running = SDL_TRUE;
@@ -160,7 +163,6 @@ void update(struct GameState *state) {
   struct Sprite *sprite = state->sprites;
 
   for (int i = 0; i < state->sprite_count; i++, sprite++) {
-    sprite->animation.timer++;
     sprite->x += sprite->velocity_x;
 
     if (sprite->velocity_x < 0) {
@@ -169,14 +171,20 @@ void update(struct GameState *state) {
     if (sprite->velocity_x > 0) {
       sprite->direction = SDL_FLIP_NONE;
     }
+    
+    update_animation(&sprite->animation);
+  }
+}
 
-    if (sprite->animation.timer > sprite->animation.duration) {
-      sprite->animation.timer = 0;
-      sprite->animation.current++;
+void update_animation(struct Animation *animation) {
+  animation->timer++;
+  
+  if (animation->timer > animation->duration) {
+    animation->timer = 0;
+    animation->current++;
+  }
 
-      if (sprite->animation.current == sprite->animation.total) {
-        sprite->animation.current = 0;
-      }
-    }
+  if (animation->current == animation->total) {
+    animation->current = 0;
   }
 }
