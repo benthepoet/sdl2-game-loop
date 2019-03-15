@@ -5,18 +5,23 @@
 #define WIN_X 640
 #define WIN_Y 480
 #define WIN_TITLE "Demo"
+
 #define TICKS_PER_SECOND 60
 #define SKIP_TICKS (1000 / TICKS_PER_SECOND)
 #define MAX_FRAMESKIP 10
+
 #define SCALE_FACTOR 3
 
+#define FACING_LEFT SDL_FLIP_HORIZONTAL
+#define FACING_RIGHT SDL_FLIP_NONE
+
 struct Animation {
-  int w;
-  int h;
-  int current;
-  int total;
-  int duration;
-  int timer;
+  int frame_w;
+  int frame_h;
+  int frame_offset;
+  int frame_span;
+  int frame_timer;
+  int texture_w;
   SDL_Texture *texture;
 };
 
@@ -24,7 +29,7 @@ struct Sprite {
   int x;
   int y;
   int velocity_x;
-  SDL_RendererFlip direction;
+  SDL_RendererFlip orientation;
   struct Animation animation;
 };
 
@@ -116,9 +121,17 @@ int main(int argc, char *argv[]) {
 struct GameState* init(SDL_Renderer *renderer) {
   struct GameState *initial = malloc(sizeof(struct GameState));
 
-  struct Animation animation = { 24, 24, 0, 4, 10, 0 };
   SDL_Surface *surface = SDL_LoadBMP("run.bmp");
+  
+  struct Animation animation;
+  animation.frame_w = 24;
+  animation.frame_h = 24;
+  animation.frame_offset = 0;
+  animation.frame_span = 10;
+  animation.frame_timer = 0;
+  animation.texture_w = surface->w;
   animation.texture = SDL_CreateTextureFromSurface(renderer, surface);
+  
   SDL_FreeSurface(surface);
 
   initial->sprite_count = 1;
@@ -126,7 +139,7 @@ struct GameState* init(SDL_Renderer *renderer) {
   initial->sprites->x = 0;
   initial->sprites->y = 0;
   initial->sprites->velocity_x = 0;
-  initial->sprites->direction = SDL_FLIP_NONE;
+  initial->sprites->orientation = FACING_RIGHT;
   initial->sprites->animation = animation;
 
   return initial;
@@ -146,17 +159,19 @@ void draw(SDL_Renderer *renderer, struct GameState *state) {
 }
 
 void draw_sprite(SDL_Renderer *renderer, struct Sprite *sprite) {
-  int x = sprite->animation.w * sprite->animation.current;
+  SDL_Rect src;  
+  src.x = sprite->animation.frame_offset;
+  src.y = 0;
+  src.w = sprite->animation.frame_w;
+  src.h = sprite->animation.frame_h;
+  
+  SDL_Rect dst;
+  dst.x = sprite->x * SCALE_FACTOR;
+  dst.y = sprite->y * SCALE_FACTOR;
+  dst.w = sprite->animation.frame_w * SCALE_FACTOR;
+  dst.h = sprite->animation.frame_h * SCALE_FACTOR;
 
-  SDL_Rect src = { x, 0, sprite->animation.w, sprite->animation.h };
-  SDL_Rect dst = {
-    sprite->x * SCALE_FACTOR,
-    sprite->y * SCALE_FACTOR,
-    sprite->animation.w * SCALE_FACTOR,
-    sprite->animation.h * SCALE_FACTOR
-  };
-
-  SDL_RenderCopyEx(renderer, sprite->animation.texture, &src, &dst, 0, NULL, sprite->direction);
+  SDL_RenderCopyEx(renderer, sprite->animation.texture, &src, &dst, 0, NULL, sprite->orientation);
 }
 
 void update(struct GameState *state) {
@@ -166,10 +181,10 @@ void update(struct GameState *state) {
     sprite->x += sprite->velocity_x;
 
     if (sprite->velocity_x < 0) {
-      sprite->direction = SDL_FLIP_HORIZONTAL;
+      sprite->orientation = FACING_LEFT;
     }
     if (sprite->velocity_x > 0) {
-      sprite->direction = SDL_FLIP_NONE;
+      sprite->orientation = FACING_RIGHT;
     }
     
     update_animation(&sprite->animation);
@@ -177,14 +192,14 @@ void update(struct GameState *state) {
 }
 
 void update_animation(struct Animation *animation) {
-  animation->timer++;
+  animation->frame_timer++;
   
-  if (animation->timer > animation->duration) {
-    animation->timer = 0;
-    animation->current++;
+  if (animation->frame_timer > animation->frame_span) {
+    animation->frame_timer = 0;
+    animation->frame_offset += animation->frame_w;
   }
 
-  if (animation->current == animation->total) {
-    animation->current = 0;
+  if (animation->frame_offset == animation->texture_w) {
+    animation->frame_offset = 0;
   }
 }
