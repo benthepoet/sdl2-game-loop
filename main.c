@@ -4,6 +4,7 @@
 
 #define WIN_X 640
 #define WIN_Y 480
+#define WIN_TITLE "Demo"
 #define TICKS_PER_SECOND 60
 #define SKIP_TICKS (1000 / TICKS_PER_SECOND)
 #define MAX_FRAMESKIP 10
@@ -22,25 +23,31 @@ struct Animation {
 struct Sprite {
   int x;
   int y;
-  int speed;
+  int velocity_x;
   SDL_RendererFlip direction;
   struct Animation animation;
 };
 
 struct GameState {
+  int sprite_count;
   struct Sprite *sprites;
+};
+
+struct GameTimer {
+  int frame_loops;
+  Uint32 next_tick;
 };
 
 struct GameState* init(SDL_Renderer *renderer);
 void draw(SDL_Renderer *renderer, struct GameState *state);
-void drawSprite(SDL_Renderer *renderer, struct Sprite *sprite);
+void draw_sprite(SDL_Renderer *renderer, struct Sprite *sprite);
 void update(struct GameState *state);
 
 int main(int argc, char *argv[]) {
   SDL_bool running = SDL_TRUE;
   SDL_Renderer *renderer;
   SDL_Window *window;
-  
+
   if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
     return 3;
   }
@@ -49,50 +56,48 @@ int main(int argc, char *argv[]) {
     return 3;
   }
 
-  SDL_SetWindowTitle(window, "Demo");
-  
-  Uint32 nextTick = 0;
-  int frameLoops;
-  
+  SDL_SetWindowTitle(window, WIN_TITLE);
+
   struct GameState *state = init(renderer);
-  
+  struct GameTimer timer = { 0, 0 };
+
   while (running) {
     SDL_Event event;
 
-    frameLoops = 0;
-    
-    while (SDL_GetTicks() > nextTick && frameLoops < MAX_FRAMESKIP) {
+    timer.frame_loops = 0;
+
+    while (SDL_GetTicks() > timer.next_tick && timer.frame_loops < MAX_FRAMESKIP) {
       update(state);
-      nextTick += SKIP_TICKS;
-      frameLoops++;
+      timer.frame_loops++;
+      timer.next_tick += SKIP_TICKS;
     }
-    
+
     draw(renderer, state);
-    
+
     while (SDL_PollEvent(&event)) {
       switch (event.type) {
         case SDL_QUIT:
-	  running = SDL_FALSE;
-	  break;
+          running = SDL_FALSE;
+          break;
 
         case SDL_KEYDOWN:
-	  if (event.key.keysym.sym == SDLK_LEFT) {
-	    state->sprites->speed = -1;
-	  }
-	  if (event.key.keysym.sym == SDLK_RIGHT) {
-	    state->sprites->speed = 1;
-	  }
-	  break;
+          if (event.key.keysym.sym == SDLK_LEFT) {
+            state->sprites->velocity_x = -1;
+          }
+          if (event.key.keysym.sym == SDLK_RIGHT) {
+            state->sprites->velocity_x = 1;
+          }
+          break;
 
-	case SDL_KEYUP:
-	  if (event.key.keysym.sym == SDLK_LEFT) {
-	    state->sprites->speed = 0;
-	  }
-	  if (event.key.keysym.sym == SDLK_RIGHT) {
-	    state->sprites->speed = 0;
-	  }
-	  default:
-	    break;
+        case SDL_KEYUP:
+          if (event.key.keysym.sym == SDLK_LEFT) {
+            state->sprites->velocity_x = 0;
+          }
+          if (event.key.keysym.sym == SDLK_RIGHT) {
+            state->sprites->velocity_x = 0;
+          }
+        default:
+          break;
       }
     }
   }
@@ -112,13 +117,14 @@ struct GameState* init(SDL_Renderer *renderer) {
   animation.texture = SDL_CreateTextureFromSurface(renderer, surface);
   SDL_FreeSurface(surface);
 
+  initial->sprite_count = 1;
   initial->sprites = malloc(sizeof(struct Sprite));
   initial->sprites->x = 0;
   initial->sprites->y = 0;
-  initial->sprites->speed = 0;
+  initial->sprites->velocity_x = 0;
   initial->sprites->direction = SDL_FLIP_NONE;
   initial->sprites->animation = animation;
-  
+
   return initial;
 }
 
@@ -126,19 +132,18 @@ void draw(SDL_Renderer *renderer, struct GameState *state) {
   SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
   SDL_RenderClear(renderer);
 
-  int n = sizeof(*state->sprites) / sizeof(struct Sprite);
   struct Sprite *sprite = state->sprites;
-  
-  for (int i = 0; i < n; i++, sprite++) {
-    drawSprite(renderer, sprite);
+
+  for (int i = 0; i < state->sprite_count; i++, sprite++) {
+    draw_sprite(renderer, sprite);
   }
-  
+
   SDL_RenderPresent(renderer);
 }
 
-void drawSprite(SDL_Renderer *renderer, struct Sprite *sprite) {
+void draw_sprite(SDL_Renderer *renderer, struct Sprite *sprite) {
   int x = sprite->animation.w * sprite->animation.current;
-  
+
   SDL_Rect src = { x, 0, sprite->animation.w, sprite->animation.h };
   SDL_Rect dst = {
     sprite->x * SCALE_FACTOR,
@@ -146,31 +151,30 @@ void drawSprite(SDL_Renderer *renderer, struct Sprite *sprite) {
     sprite->animation.w * SCALE_FACTOR,
     sprite->animation.h * SCALE_FACTOR
   };
-  
+
   SDL_RenderCopyEx(renderer, sprite->animation.texture, &src, &dst, 0, NULL, sprite->direction);
 }
 
 void update(struct GameState *state) {
-  int n = sizeof(*state->sprites) / sizeof(struct Sprite);
   struct Sprite *sprite = state->sprites;
 
-  for (int i = 0; i < n; i++, sprite++) {
+  for (int i = 0; i < state->sprite_count; i++, sprite++) {
     sprite->animation.timer++;
-    sprite->x += sprite->speed;
+    sprite->x += sprite->velocity_x;
 
-    if (sprite->speed < 0) {
+    if (sprite->velocity_x < 0) {
       sprite->direction = SDL_FLIP_HORIZONTAL;
     }
-    if (sprite->speed > 0) {
+    if (sprite->velocity_x > 0) {
       sprite->direction = SDL_FLIP_NONE;
     }
-    
+
     if (sprite->animation.timer > sprite->animation.duration) {
       sprite->animation.timer = 0;
       sprite->animation.current++;
 
       if (sprite->animation.current == sprite->animation.total) {
-	sprite->animation.current = 0;
+        sprite->animation.current = 0;
       }
     }
   }
