@@ -36,6 +36,7 @@ struct GameState {
 struct GameTimer {
   int frame_loops;
   Uint32 next_tick;
+  SDL_bool running;
 };
 
 struct GameState* init(SDL_Renderer *renderer);
@@ -47,7 +48,6 @@ void update(struct GameState *state);
 void update_animation(struct Animation *animation);
 
 int main(int argc, char *argv[]) {
-  SDL_bool running = SDL_TRUE;
   SDL_Renderer *renderer;
   SDL_Window *window;
 
@@ -62,9 +62,9 @@ int main(int argc, char *argv[]) {
   SDL_SetWindowTitle(window, WIN_TITLE);
 
   struct GameState *state = init(renderer);
-  struct GameTimer timer = { 0, 0 };
+  struct GameTimer timer = { 0, 0, SDL_TRUE };
 
-  while (running) {
+  while (timer.running) {
     SDL_Event event;
 
     timer.frame_loops = 0;
@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
     while (SDL_PollEvent(&event)) {
       switch (event.type) {
         case SDL_QUIT:
-          running = SDL_FALSE;
+          timer.running = SDL_FALSE;
           break;
 
         case SDL_KEYDOWN:
