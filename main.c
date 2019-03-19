@@ -109,7 +109,6 @@ int main(int argc, char *argv[]) {
 
 struct GameState* init(SDL_Renderer *renderer) {
   struct GameState *initial = calloc(1, sizeof(struct GameState));
-  //initial->sprites = NULL;
 
   FILE *fp = fopen(SPRITE_FILE, "r");
   char buffer[64];
