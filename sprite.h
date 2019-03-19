@@ -17,6 +17,6 @@ struct Sprite {
 };
 
 struct SpriteNode {
-  struct Sprite sprite;
+  struct Sprite data;
   struct SpriteNode *next;
 };

@@ -9,33 +9,33 @@ int main(int argc, char *argv[]) {
   FILE *fp = fopen("sprites.dat", "r");
   char buffer[64];
 
-  struct SpriteNode *root, *current;
+  struct SpriteNode *head, *iterator;
   
   while (fscanf(fp, "%s", buffer) != EOF) {
     if (strcmp(buffer, ":sprite") == 0) {
       struct SpriteNode *node = malloc(sizeof(struct SpriteNode));
 
       // Read position
-      fscanf(fp, "%*s %d %d", &node->sprite.x, &node->sprite.y);
-      printf("X: %d, Y: %d\n", node->sprite.x, node->sprite.y);
+      fscanf(fp, "%*s %d %d", &node->data.x, &node->data.y);
+      printf("X: %d, Y: %d\n", node->data.x, node->data.y);
       
       // Read velocity
-      fscanf(fp, "%*s %d", &node->sprite.velocity_x);
-      printf("Velocity X: %d\n", node->sprite.velocity_x);
+      fscanf(fp, "%*s %d", &node->data.velocity_x);
+      printf("Velocity X: %d\n", node->data.velocity_x);
       
-      if (root == NULL) {
-        current = root = node;
+      if (head == NULL) {
+        iterator = head = node;
       } else {
-        current = current->next = node;
+        iterator = iterator->next = node;
       }
     }
   }
   
-  current = root;
-  
-  while (current != NULL) {
-    printf("%d %d\n", current->sprite.x, current->sprite.y);
-    current = current->next;
+  iterator = head;
+    
+  while (iterator != NULL) {
+    printf("%d %d\n", iterator->data.x, iterator->data.y);
+    iterator = iterator->next;
   }
   
   fclose(fp);

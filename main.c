@@ -18,8 +18,7 @@
 #define FACING_RIGHT SDL_FLIP_NONE
 
 struct GameState {
-  int sprite_count;
-  struct Sprite *sprites;
+  struct SpriteNode *sprites;
 };
 
 struct GameTimer {
@@ -77,19 +76,19 @@ int main(int argc, char *argv[]) {
 
         case SDL_KEYDOWN:
           if (event.key.keysym.sym == SDLK_LEFT) {
-            state->sprites->velocity_x = -1;
+            state->sprites->data.velocity_x = -1;
           }
           if (event.key.keysym.sym == SDLK_RIGHT) {
-            state->sprites->velocity_x = 1;
+            state->sprites->data.velocity_x = 1;
           }
           break;
 
         case SDL_KEYUP:
           if (event.key.keysym.sym == SDLK_LEFT) {
-            state->sprites->velocity_x = 0;
+            state->sprites->data.velocity_x = 0;
           }
           if (event.key.keysym.sym == SDLK_RIGHT) {
-            state->sprites->velocity_x = 0;
+            state->sprites->data.velocity_x = 0;
           }
 
         default:
@@ -121,13 +120,13 @@ struct GameState* init(SDL_Renderer *renderer) {
   
   SDL_FreeSurface(surface);
 
-  initial->sprite_count = 1;
-  initial->sprites = malloc(sizeof(struct Sprite));
-  initial->sprites->x = 0;
-  initial->sprites->y = 0;
-  initial->sprites->velocity_x = 0;
-  initial->sprites->orientation = FACING_RIGHT;
-  initial->sprites->animation = animation;
+  initial->sprites = malloc(sizeof(struct SpriteNode));
+  initial->sprites->next = NULL;
+  initial->sprites->data.x = 0;
+  initial->sprites->data.y = 0;
+  initial->sprites->data.velocity_x = 0;
+  initial->sprites->data.orientation = FACING_RIGHT;
+  initial->sprites->data.animation = animation;
 
   return initial;
 }
@@ -136,10 +135,11 @@ void draw(SDL_Renderer *renderer, struct GameState *state) {
   SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
   SDL_RenderClear(renderer);
 
-  struct Sprite *sprite = state->sprites;
+  struct SpriteNode *current = state->sprites;
 
-  for (int i = 0; i < state->sprite_count; i++, sprite++) {
-    draw_sprite(renderer, sprite);
+  while (current != NULL) {
+    draw_sprite(renderer, &current->data);
+    current = current->next;
   }
 
   SDL_RenderPresent(renderer);
@@ -162,9 +162,11 @@ void draw_sprite(SDL_Renderer *renderer, struct Sprite *sprite) {
 }
 
 void update(struct GameState *state) {
-  struct Sprite *sprite = state->sprites;
+  struct SpriteNode *current = state->sprites;
 
-  for (int i = 0; i < state->sprite_count; i++, sprite++) {
+  while (current != NULL) {
+    struct Sprite *sprite = &current->data;
+    
     sprite->x += sprite->velocity_x;
 
     if (sprite->velocity_x < 0) {
@@ -175,6 +177,7 @@ void update(struct GameState *state) {
     }
     
     update_animation(&sprite->animation);
+    current = current->next;
   }
 }
 

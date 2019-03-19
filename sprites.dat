@@ -2,8 +2,3 @@
 :position 12 24
 :velocity 0
 :animation run.bmp 24 24 0 10 0
-
-:sprite
-:position 64 32
-:velocity 0
-:animation run.bmp 24 24 0 10 0
