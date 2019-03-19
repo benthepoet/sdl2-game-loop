@@ -2,6 +2,8 @@
 
 #include "SDL2/SDL.h"
 
+#include "sprite.h"
+
 #define WIN_X 640
 #define WIN_Y 480
 #define WIN_TITLE "Demo"
@@ -14,24 +16,6 @@
 
 #define FACING_LEFT SDL_FLIP_HORIZONTAL
 #define FACING_RIGHT SDL_FLIP_NONE
-
-struct Animation {
-  int frame_w;
-  int frame_h;
-  int frame_offset;
-  int frame_span;
-  int frame_timer;
-  int texture_w;
-  SDL_Texture *texture;
-};
-
-struct Sprite {
-  int x;
-  int y;
-  int velocity_x;
-  SDL_RendererFlip orientation;
-  struct Animation animation;
-};
 
 struct GameState {
   int sprite_count;
@@ -67,7 +51,10 @@ int main(int argc, char *argv[]) {
   SDL_SetWindowTitle(window, WIN_TITLE);
 
   struct GameState *state = init(renderer);
-  struct GameTimer timer = { 0, 0, SDL_TRUE };
+  
+  struct GameTimer timer;
+  timer.next_tick = 0;
+  timer.running = SDL_TRUE;
 
   while (timer.running) {
     SDL_Event event;
