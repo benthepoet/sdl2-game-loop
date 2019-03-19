@@ -14,6 +14,8 @@
 
 #define SCALE_FACTOR 3
 
+#define SPRITE_FILE "sprites.dat"
+
 #define FACING_LEFT SDL_FLIP_HORIZONTAL
 #define FACING_RIGHT SDL_FLIP_NONE
 
@@ -105,28 +107,51 @@ int main(int argc, char *argv[]) {
 }
 
 struct GameState* init(SDL_Renderer *renderer) {
-  struct GameState *initial = malloc(sizeof(struct GameState));
+  struct GameState *initial = calloc(1, sizeof(struct GameState));
+  //initial->sprites = NULL;
 
-  SDL_Surface *surface = SDL_LoadBMP("run.bmp");
+  FILE *fp = fopen(SPRITE_FILE, "r");
+  char buffer[64];
   
-  struct Animation animation;
-  animation.frame_w = 24;
-  animation.frame_h = 24;
-  animation.frame_offset = 0;
-  animation.frame_span = 10;
-  animation.frame_timer = 0;
-  animation.texture_w = surface->w;
-  animation.texture = SDL_CreateTextureFromSurface(renderer, surface);
+  struct SpriteNode *current;
   
-  SDL_FreeSurface(surface);
+  while (fscanf(fp, "%s", buffer) != EOF) {
+    if (strcmp(buffer, ":sprite") == 0) {
+      // Initialize node
+      struct SpriteNode *node = calloc(1, sizeof(struct SpriteNode));
 
-  initial->sprites = malloc(sizeof(struct SpriteNode));
-  initial->sprites->next = NULL;
-  initial->sprites->data.x = 0;
-  initial->sprites->data.y = 0;
-  initial->sprites->data.velocity_x = 0;
-  initial->sprites->data.orientation = FACING_RIGHT;
-  initial->sprites->data.animation = animation;
+      // Read position
+      fscanf(fp, "%*s %d %d", &node->data.x, &node->data.y);
+      printf("X: %d, Y: %d\n", node->data.x, node->data.y);
+
+      // Read velocity
+      fscanf(fp, "%*s %d", &node->data.velocity_x);
+      printf("Velocity X: %d\n", node->data.velocity_x);
+
+      // Read animation
+      struct Animation *animation = &node->data.animation;
+      animation->frame_offset = 0;
+      animation->frame_timer = 0;
+
+      char texture_file[64];
+
+      fscanf(fp, "%*s %s %d %d %d", texture_file, &animation->frame_w, &animation->frame_h, &animation->frame_span);   
+
+      // Load texture
+      SDL_Surface *surface = SDL_LoadBMP(texture_file);
+      animation->texture_w = surface->w;
+      animation->texture = SDL_CreateTextureFromSurface(renderer, surface);
+      SDL_FreeSurface(surface);
+
+      if (initial->sprites == NULL) {
+        current = initial->sprites = node;
+      } else {
+        current = current->next = node;
+      }
+    }
+  }
+  
+  fclose(fp);
 
   return initial;
 }
@@ -166,7 +191,7 @@ void update(struct GameState *state) {
 
   while (current != NULL) {
     struct Sprite *sprite = &current->data;
-    
+
     sprite->x += sprite->velocity_x;
 
     if (sprite->velocity_x < 0) {
@@ -175,7 +200,7 @@ void update(struct GameState *state) {
     if (sprite->velocity_x > 0) {
       sprite->orientation = FACING_RIGHT;
     }
-    
+
     update_animation(&sprite->animation);
     current = current->next;
   }
@@ -183,7 +208,7 @@ void update(struct GameState *state) {
 
 void update_animation(struct Animation *animation) {
   animation->frame_timer++;
-  
+
   if (animation->frame_timer > animation->frame_span) {
     animation->frame_timer = 0;
     animation->frame_offset += animation->frame_w;

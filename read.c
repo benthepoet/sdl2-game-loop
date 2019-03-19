@@ -13,7 +13,7 @@ int main(int argc, char *argv[]) {
   
   while (fscanf(fp, "%s", buffer) != EOF) {
     if (strcmp(buffer, ":sprite") == 0) {
-      struct SpriteNode *node = malloc(sizeof(struct SpriteNode));
+      struct SpriteNode *node = calloc(1, sizeof(struct SpriteNode));
 
       // Read position
       fscanf(fp, "%*s %d %d", &node->data.x, &node->data.y);
@@ -30,6 +30,8 @@ int main(int argc, char *argv[]) {
       }
     }
   }
+
+  fclose(fp);
   
   iterator = head;
     
@@ -37,7 +39,6 @@ int main(int argc, char *argv[]) {
     printf("%d %d\n", iterator->data.x, iterator->data.y);
     iterator = iterator->next;
   }
-  
-  fclose(fp);
+
   return 0;
 }
