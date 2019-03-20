@@ -37,6 +37,7 @@ void draw_sprite(SDL_Renderer *renderer, struct Sprite *sprite);
 
 void update(struct GameState *state);
 void update_animation(struct Animation *animation);
+void update_sprite(struct Sprite *sprite);
 
 int main(int argc, char *argv[]) {
   SDL_Renderer *renderer;
@@ -104,6 +105,8 @@ int main(int argc, char *argv[]) {
   SDL_DestroyWindow(window);
   SDL_Quit();
   
+  free(state);
+  
   return 0;
 }
 
@@ -115,18 +118,16 @@ struct GameState* init(SDL_Renderer *renderer) {
   
   struct SpriteNode *current;
   
-  while (fscanf(fp, "%s", buffer) != EOF) {
+  while (fscanf(fp, "%63s", buffer) != EOF) {
     if (strcmp(buffer, ":sprite") == 0) {
       // Initialize node
       struct SpriteNode *node = calloc(1, sizeof(struct SpriteNode));
 
       // Read position
       fscanf(fp, "%*s %d %d", &node->data.x, &node->data.y);
-      printf("X: %d, Y: %d\n", node->data.x, node->data.y);
 
       // Read velocity
       fscanf(fp, "%*s %d", &node->data.velocity_x);
-      printf("Velocity X: %d\n", node->data.velocity_x);
 
       // Read animation
       struct Animation *animation = &node->data.animation;
@@ -135,7 +136,7 @@ struct GameState* init(SDL_Renderer *renderer) {
 
       char texture_file[64];
 
-      fscanf(fp, "%*s %s %d %d %d", texture_file, &animation->frame_w, &animation->frame_h, &animation->frame_span);   
+      fscanf(fp, "%*s %63s %d %d %d", texture_file, &animation->frame_w, &animation->frame_h, &animation->frame_span);   
 
       // Load texture
       SDL_Surface *surface = SDL_LoadBMP(texture_file);
@@ -190,18 +191,7 @@ void update(struct GameState *state) {
   struct SpriteNode *current = state->sprites;
 
   while (current != NULL) {
-    struct Sprite *sprite = &current->data;
-
-    sprite->x += sprite->velocity_x;
-
-    if (sprite->velocity_x < 0) {
-      sprite->orientation = FACING_LEFT;
-    }
-    if (sprite->velocity_x > 0) {
-      sprite->orientation = FACING_RIGHT;
-    }
-
-    update_animation(&sprite->animation);
+    update_sprite(&current->data);
     current = current->next;
   }
 }
@@ -217,4 +207,17 @@ void update_animation(struct Animation *animation) {
   if (animation->frame_offset == animation->texture_w) {
     animation->frame_offset = 0;
   }
+}
+
+void update_sprite(struct Sprite *sprite) {
+  sprite->x += sprite->velocity_x;
+
+  if (sprite->velocity_x < 0) {
+    sprite->orientation = FACING_LEFT;
+  }
+  if (sprite->velocity_x > 0) {
+    sprite->orientation = FACING_RIGHT;
+  }
+
+  update_animation(&sprite->animation);
 }
