@@ -1,0 +1,4 @@
+<?xml version="1.0" ?>
+<sp:sprite x="12" y="24" velocity_x="0" xmlns:sp="sprite">
+  <sp:animation file="run.bmp" frame_width="24" frame_height="24" frame_span="10" />
+</sp:sprite>
