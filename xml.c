@@ -14,11 +14,10 @@
 int named(char*, char*);
 
 int main(int argc, char *argv[]) {
-  xmlTextReaderPtr reader;
-  reader = xmlNewTextReaderFilename(SPRITE_FILE);
+  xmlTextReaderPtr reader = xmlNewTextReaderFilename(SPRITE_FILE);
   
   if (reader != NULL) {
-    struct Sprite *sprite;
+    struct SpriteNode *head = NULL, *current, *node;
     
     while (xmlTextReaderRead(reader)) {
       int node_type = xmlTextReaderNodeType(reader);
@@ -27,20 +26,37 @@ int main(int argc, char *argv[]) {
       switch (node_type) {
         case START_ELEMENT:
           if (named(node_name, "sp:sprite")) {
-            sprite = calloc(1, sizeof(struct Sprite));
+            node = calloc(1, sizeof(struct SpriteNode));
+          }
           
-            if (xmlTextReaderHasAttributes(reader)) {
-              while(xmlTextReaderMoveToNextAttribute(reader)) {
-                char *attr_name = xmlTextReaderName(reader); 
-                char *attr_value = xmlTextReaderValue(reader);
-                
+          if (xmlTextReaderHasAttributes(reader)) {
+            while(xmlTextReaderMoveToNextAttribute(reader)) {
+              char *attr_name = xmlTextReaderName(reader); 
+              char *attr_value = xmlTextReaderValue(reader);
+              
+              if (named(node_name, "sp:sprite")) {
                 if (named(attr_name, "x")) {
-                  sprite->x = atoi(attr_value);
+                  node->data.x = atoi(attr_value);
                 }
                 if (named(attr_name, "y")) {
-                  sprite->y = atoi(attr_value);
+                  node->data.y = atoi(attr_value);
                 }
               }
+              
+              if (named(node_name, "sp:animation")) {
+                if (named(attr_name, "frame_width")) {
+                  node->data.animation.frame_w = atoi(attr_value);
+                }
+                if (named(attr_name, "frame_height")) {
+                  node->data.animation.frame_h = atoi(attr_value);
+                }
+                if (named(attr_name, "frame_span")) {
+                  node->data.animation.frame_span = atoi(attr_value);
+                }
+              }
+              
+              xmlFree(attr_name);
+              xmlFree(attr_value);
             }
           }
           
@@ -48,13 +64,19 @@ int main(int argc, char *argv[]) {
           
         case END_ELEMENT:
           if (named(node_name, "sp:sprite")) {
-            sprite = NULL;
+            if (head == NULL) {
+              current = head = node;
+            } else {
+              current = current->next = node;
+            }
           }
           break;
       }
+      
+      xmlFree(node_name);
     }
+    
     xmlFreeTextReader(reader);
-    free(sprite);
   }
 }
 
