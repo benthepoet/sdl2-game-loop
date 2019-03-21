@@ -1,12 +1,30 @@
 <?xml version="1.0"?>
-<sp:sprites xmlns:sp="sprite">
-  <sp:sprite x="12" y="24" velocity_x="0" >
-    <sp:animation file="run.bmp" frame_width="24" frame_height="24" frame_span="10" />
+<sp:sprites xmlns:sp="sprite" xmlns:an="animation">
+  <sp:sprite>
+    <sp:x>12</sp:x>
+    <sp:y>24</sp:y>
+    <an:animation>
+      <an:frame_width>24</an:frame_width>
+      <an:frame_height>24</an:frame_height>
+      <an:frame_span>10</an:frame_span>
+    </an:animation>
   </sp:sprite>
-  <sp:sprite x="24" y="48" velocity_x="0">
-    <sp:animation file="walk.bmp" frame_width="24" frame_height="24" frame_span="10" />
+  <sp:sprite>
+    <sp:x>24</sp:x>
+    <sp:y>48</sp:y>
+    <an:animation>
+      <an:frame_width>24</an:frame_width>
+      <an:frame_height>24</an:frame_height>
+      <an:frame_span>10</an:frame_span>
+    </an:animation>
   </sp:sprite>
-  <sp:sprite x="48" y="24" velocity_x="0">
-    <sp:animation file="idle.bmp" frame_width="24" frame_height="24" frame_span="10" />
+  <sp:sprite>
+    <sp:x>48</sp:x>
+    <sp:y>24</sp:y>
+    <an:animation>
+      <an:frame_width>24</an:frame_width>
+      <an:frame_height>24</an:frame_height>
+      <an:frame_span>10</an:frame_span>
+    </an:animation>
   </sp:sprite>
 </sp:sprites>

@@ -23,29 +23,12 @@ int main(int argc, char *argv[]) {
     while (xmlTextReaderRead(reader)) {
       int type = xmlTextReaderNodeType(reader);
       char *name = xmlTextReaderName(reader);
-      
+
       switch (type) {
         case START_ELEMENT:
           if (!strcmp(name, "sp:sprite")) {
             node = calloc(1, sizeof(struct SpriteNode));
-            
-            if (xmlTextReaderHasAttributes(reader)) {
-              while(xmlTextReaderMoveToNextAttribute(reader)) {
-                char *attr_name = xmlTextReaderName(reader); 
-                char *attr_value = xmlTextReaderValue(reader);
-                
-                if (!strcmp(name, "x")) {
-                  node->data.x = atoi(attr_value);
-                }
-                if (!strcmp(name, "y")) {
-                  node->data.y = atoi(attr_value);
-                }
 
-                xmlFree(attr_name);
-                xmlFree(attr_value);
-              }
-            }
-            
             if (read_sprite(reader, &node->data)) {
               if (head == NULL) {
                 current = head = node;
@@ -65,6 +48,47 @@ int main(int argc, char *argv[]) {
   }
 }
 
+int read_animation(xmlTextReaderPtr reader, struct Animation *animation) {
+  int ret = 0;
+  
+  while (!ret) {
+    xmlTextReaderRead(reader);
+    
+    int type = xmlTextReaderNodeType(reader);
+    char *name = xmlTextReaderName(reader);
+    char *value;
+    
+    switch (type) {
+      case START_ELEMENT:
+        value = xmlTextReaderReadString(reader);
+      
+        if (!strcmp(name, "an:frame_width")) {
+          animation->frame_w = atoi(value);
+        }
+        
+        if (!strcmp(name, "an:frame_height")) {
+          animation->frame_h = atoi(value);
+        }
+        
+        if (!strcmp(name, "an:frame_span")) {
+          animation->frame_span = atoi(value);
+        }
+        
+        xmlFree(value);
+        break;
+        
+      case END_ELEMENT:
+        if (!strcmp(name, "an:animation")) {
+          ret = 1;
+        }
+    }
+    
+    xmlFree(name);
+  }
+  
+  return ret;
+}
+
 int read_sprite(xmlTextReaderPtr reader, struct Sprite *sprite) {
   int ret = 0;
   
@@ -76,26 +100,20 @@ int read_sprite(xmlTextReaderPtr reader, struct Sprite *sprite) {
     
     switch (type) {
       case START_ELEMENT:
-        if (!strcmp(name, "sp:animation")) {
-          if (xmlTextReaderHasAttributes(reader)) {
-              while(xmlTextReaderMoveToNextAttribute(reader)) {
-                char *attr_name = xmlTextReaderName(reader); 
-                char *attr_value = xmlTextReaderValue(reader);
-                
-                if (!strcmp(attr_name, "frame_width")) {
-                  sprite->animation.frame_w = atoi(attr_value);
-                }
-                if (!strcmp(attr_name, "frame_height")) {
-                  sprite->animation.frame_h = atoi(attr_value);
-                }
-                if (!strcmp(attr_name, "frame_span")) {
-                  sprite->animation.frame_span = atoi(attr_value);
-                }
-                
-                xmlFree(attr_name);
-                xmlFree(attr_value);
-              }
-            }
+        if (!strcmp(name, "an:animation")) {
+          read_animation(reader, &sprite->animation);
+        } else {
+          char *value = xmlTextReaderReadString(reader);
+          
+          if (!strcmp(name, "sp:x")) {
+            sprite->x = atoi(value);
+          }
+          
+          if (!strcmp(name, "sp:y")) {
+            sprite->y = atoi(value);
+          }
+          
+          xmlFree(value);
         }
         break;
         
