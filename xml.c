@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
       
       switch (node_type) {
         case START_ELEMENT:
-          if (named(node_name, "sp:sprite")) {
+          if (!strcmp(node_name, "sp:sprite")) {
             node = calloc(1, sizeof(struct SpriteNode));
           }
           
@@ -34,23 +34,23 @@ int main(int argc, char *argv[]) {
               char *attr_name = xmlTextReaderName(reader); 
               char *attr_value = xmlTextReaderValue(reader);
               
-              if (named(node_name, "sp:sprite")) {
-                if (named(attr_name, "x")) {
+              if (!strcmp(node_name, "sp:sprite")) {
+                if (!strcmp(attr_name, "x")) {
                   node->data.x = atoi(attr_value);
                 }
-                if (named(attr_name, "y")) {
+                if (!strcmp(attr_name, "y")) {
                   node->data.y = atoi(attr_value);
                 }
               }
               
-              if (named(node_name, "sp:animation")) {
-                if (named(attr_name, "frame_width")) {
+              if (!strcmp(node_name, "sp:animation")) {
+                if (!strcmp(attr_name, "frame_width")) {
                   node->data.animation.frame_w = atoi(attr_value);
                 }
-                if (named(attr_name, "frame_height")) {
+                if (!strcmp(attr_name, "frame_height")) {
                   node->data.animation.frame_h = atoi(attr_value);
                 }
-                if (named(attr_name, "frame_span")) {
+                if (!strcmp(attr_name, "frame_span")) {
                   node->data.animation.frame_span = atoi(attr_value);
                 }
               }
@@ -63,7 +63,7 @@ int main(int argc, char *argv[]) {
           break;
           
         case END_ELEMENT:
-          if (named(node_name, "sp:sprite")) {
+          if (!strcmp(node_name, "sp:sprite")) {
             if (head == NULL) {
               current = head = node;
             } else {
@@ -78,8 +78,4 @@ int main(int argc, char *argv[]) {
     
     xmlFreeTextReader(reader);
   }
-}
-
-int named(char *node_name, char *name) {
-  return strcmp(node_name, name) == 0;
 }
