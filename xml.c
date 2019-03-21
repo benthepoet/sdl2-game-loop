@@ -1,7 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <libxml/xmlreader.h>
+
+#include <mxml.h>
 #include <SDL2/SDL.h>
 
 #include "sprite.h"
@@ -11,120 +12,63 @@
 
 #define SPRITE_FILE "sprites.xml"
 
-int named(char*, char*);
-int read_sprite(xmlTextReaderPtr, struct Sprite*);
+struct GameState {
+  struct SpriteNode *sprite_head;
+};
+
+struct Loader {
+  struct GameState *state;
+  void *ptr;
+};
+
+void sax_cb(mxml_node_t *node, mxml_sax_event_t event, void *data);
 
 int main(int argc, char *argv[]) {
-  xmlTextReaderPtr reader = xmlNewTextReaderFilename(SPRITE_FILE);
+  struct Loader loader;
+  loader.state = calloc(1, sizeof(struct GameState));
   
-  if (reader != NULL) {
-    struct SpriteNode *head = NULL, *current, *node;
-    
-    while (xmlTextReaderRead(reader)) {
-      int type = xmlTextReaderNodeType(reader);
-      char *name = xmlTextReaderName(reader);
-
-      switch (type) {
-        case START_ELEMENT:
-          if (!strcmp(name, "sp:sprite")) {
-            node = calloc(1, sizeof(struct SpriteNode));
-
-            if (read_sprite(reader, &node->data)) {
-              if (head == NULL) {
-                current = head = node;
-              } else {
-                current = current->next = node;
-              }
-            }
-          }
-          
-          break;
-      }
-      
-      xmlFree(name);
-    }
-    
-    xmlFreeTextReader(reader);
-  }
+  FILE *fp = fopen(SPRITE_FILE, "r");
+  mxmlSAXLoadFile(NULL, fp, MXML_TEXT_CALLBACK, sax_cb, &loader);
+  
+  free(loader.state);
 }
 
-int read_animation(xmlTextReaderPtr reader, struct Animation *animation) {
-  int ret = 0;
+void sax_cb(mxml_node_t *node, mxml_sax_event_t event, void *data) {
+  struct Loader *loader = (struct Loader*)data;
   
-  while (!ret) {
-    xmlTextReaderRead(reader);
+  if (event == MXML_SAX_ELEMENT_OPEN) {
+    const char *name = mxmlGetElement(node);
     
-    int type = xmlTextReaderNodeType(reader);
-    char *name = xmlTextReaderName(reader);
-    char *value;
-    
-    switch (type) {
-      case START_ELEMENT:
-        value = xmlTextReaderReadString(reader);
-      
-        if (!strcmp(name, "an:frame_width")) {
-          animation->frame_w = atoi(value);
-        }
-        
-        if (!strcmp(name, "an:frame_height")) {
-          animation->frame_h = atoi(value);
-        }
-        
-        if (!strcmp(name, "an:frame_span")) {
-          animation->frame_span = atoi(value);
-        }
-        
-        xmlFree(value);
-        break;
-        
-      case END_ELEMENT:
-        if (!strcmp(name, "an:animation")) {
-          ret = 1;
-        }
+    if (!strcmp(name, "sp:sprite")) {
+      loader->ptr = calloc(1, sizeof(struct SpriteNode));
+      struct SpriteNode *node = loader->ptr;
+      node->next = loader->state->sprite_head;
+      loader->state->sprite_head = node;
     }
-    
-    xmlFree(name);
   }
   
-  return ret;
-}
-
-int read_sprite(xmlTextReaderPtr reader, struct Sprite *sprite) {
-  int ret = 0;
-  
-  while (!ret) {
-    xmlTextReaderRead(reader);
+  if (event == MXML_SAX_DATA) {
+    const char *value = mxmlGetText(node, 0);
+    const char *parent = mxmlGetElement(mxmlGetParent(node));
     
-    int type = xmlTextReaderNodeType(reader);
-    char *name = xmlTextReaderName(reader);
-    
-    switch (type) {
-      case START_ELEMENT:
-        if (!strcmp(name, "an:animation")) {
-          read_animation(reader, &sprite->animation);
-        } else {
-          char *value = xmlTextReaderReadString(reader);
-          
-          if (!strcmp(name, "sp:x")) {
-            sprite->x = atoi(value);
-          }
-          
-          if (!strcmp(name, "sp:y")) {
-            sprite->y = atoi(value);
-          }
-          
-          xmlFree(value);
-        }
-        break;
-        
-      case END_ELEMENT:
-        if (!strcmp(name, "sp:sprite")) {
-          ret = 1;
-        }
+    if (!strcmp(parent, "sp:x")) {
+      loader->state->sprite_head->data.x = atoi(value);
     }
     
-    xmlFree(name);
+    if (!strcmp(parent, "sp:y")) {
+      loader->state->sprite_head->data.y = atoi(value);
+    }
+    
+    if (!strcmp(parent, "an:frame_width")) {
+      loader->state->sprite_head->data.animation.frame_w = atoi(value);
+    }
+    
+    if (!strcmp(parent, "an:frame_height")) {
+      loader->state->sprite_head->data.animation.frame_h = atoi(value);
+    }
+    
+    if (!strcmp(parent, "an:frame_span")) {
+      loader->state->sprite_head->data.animation.frame_span = atoi(value);
+    }
   }
-  
-  return ret;
 }
