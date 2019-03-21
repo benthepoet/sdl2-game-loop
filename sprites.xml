@@ -4,9 +4,9 @@
     <sp:animation file="run.bmp" frame_width="24" frame_height="24" frame_span="10" />
   </sp:sprite>
   <sp:sprite x="24" y="48" velocity_x="0">
-    <sp:animation file="run.bmp" frame_width="24" frame_height="24" frame_span="10" />
+    <sp:animation file="walk.bmp" frame_width="24" frame_height="24" frame_span="10" />
   </sp:sprite>
   <sp:sprite x="48" y="24" velocity_x="0">
-    <sp:animation file="run.bmp" frame_width="24" frame_height="24" frame_span="10" />
+    <sp:animation file="idle.bmp" frame_width="24" frame_height="24" frame_span="10" />
   </sp:sprite>
 </sp:sprites>
