@@ -24,6 +24,7 @@ int main(int argc, char *argv[]) {
   FILE *fp = fopen(SPRITE_FILE, "r");
   mxmlSAXLoadFile(NULL, fp, MXML_TEXT_CALLBACK, sax_cb, state);
   
+  fclose(fp);
   free(state);
 }
 
