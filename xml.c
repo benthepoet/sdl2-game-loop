@@ -16,34 +16,27 @@ struct GameState {
   struct SpriteNode *sprite_head;
 };
 
-struct Loader {
-  struct GameState *state;
-  void *ptr;
-};
-
 void sax_cb(mxml_node_t *node, mxml_sax_event_t event, void *data);
 
 int main(int argc, char *argv[]) {
-  struct Loader loader;
-  loader.state = calloc(1, sizeof(struct GameState));
+  struct GameState *state = calloc(1, sizeof(struct GameState));
   
   FILE *fp = fopen(SPRITE_FILE, "r");
-  mxmlSAXLoadFile(NULL, fp, MXML_TEXT_CALLBACK, sax_cb, &loader);
+  mxmlSAXLoadFile(NULL, fp, MXML_TEXT_CALLBACK, sax_cb, state);
   
-  free(loader.state);
+  free(state);
 }
 
 void sax_cb(mxml_node_t *node, mxml_sax_event_t event, void *data) {
-  struct Loader *loader = (struct Loader*)data;
+  struct GameState *state = (struct GameState *)data;
   
   if (event == MXML_SAX_ELEMENT_OPEN) {
     const char *name = mxmlGetElement(node);
     
     if (!strcmp(name, "sp:sprite")) {
-      loader->ptr = calloc(1, sizeof(struct SpriteNode));
-      struct SpriteNode *node = loader->ptr;
-      node->next = loader->state->sprite_head;
-      loader->state->sprite_head = node;
+      struct SpriteNode *node = calloc(1, sizeof(struct SpriteNode));
+      node->next = state->sprite_head;
+      state->sprite_head = node;
     }
   }
   
@@ -52,23 +45,23 @@ void sax_cb(mxml_node_t *node, mxml_sax_event_t event, void *data) {
     const char *parent = mxmlGetElement(mxmlGetParent(node));
     
     if (!strcmp(parent, "sp:x")) {
-      loader->state->sprite_head->data.x = atoi(value);
+      state->sprite_head->data.x = atoi(value);
     }
     
     if (!strcmp(parent, "sp:y")) {
-      loader->state->sprite_head->data.y = atoi(value);
+      state->sprite_head->data.y = atoi(value);
     }
     
     if (!strcmp(parent, "an:frame_width")) {
-      loader->state->sprite_head->data.animation.frame_w = atoi(value);
+      state->sprite_head->data.animation.frame_w = atoi(value);
     }
     
     if (!strcmp(parent, "an:frame_height")) {
-      loader->state->sprite_head->data.animation.frame_h = atoi(value);
+      state->sprite_head->data.animation.frame_h = atoi(value);
     }
     
     if (!strcmp(parent, "an:frame_span")) {
-      loader->state->sprite_head->data.animation.frame_span = atoi(value);
+      state->sprite_head->data.animation.frame_span = atoi(value);
     }
   }
 }
